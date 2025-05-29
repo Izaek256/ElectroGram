@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from django.conf import settings
+from decouple import config
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -10,12 +11,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-(9ox@4m(-n!*k!jp$kf6!ph-nnn_iyhehh=&%-*i(w38$e##@6'
+SECRET_KEY = config('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = config('DEBUG', cast=bool)
 
-ALLOWED_HOSTS = ['https://rmk3tpx7-8000.uks1.devtunnels.msft.com', '127.0.0.1', 'localhost', 'electrogramplc.com', 'www.electrogramplc.com']
+ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='127.0.0.1,localhost', cast=lambda v: [s.strip() for s in v.split(',')])
 
 
 # Application definition
@@ -53,8 +54,8 @@ SOCIALACCOUNT_PROVIDERS = {}
 
 SOCIALACCOUNT_PROVIDERS['google'] = {
     'APP': {
-        'client_id': '154326017838-j070q01mlmk76gooas7runq78v82sk4k.apps.googleusercontent.com',
-        'secret': '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',
+        'client_id': config('GOOGLE_CLIENT_ID'),
+        'secret': config('GOOGLE_CLIENT_SECRET'),
     }
 }
 
@@ -99,11 +100,11 @@ WSGI_APPLICATION = 'Store.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'electrogramplc_db',
-        'USER': 'postgres',
-        'PASSWORD': 'eugenek890@E256',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': config('DB_NAME'),
+        'USER': config('DB_USER'),
+        'PASSWORD': config('DB_PASSWORD'),
+        'HOST': config('DB_HOST', default='localhost'),
+        'PORT': config('DB_PORT', default='5432'),
     }
 }
 
@@ -176,8 +177,8 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # Example for Gmail
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'isaackisuule240@gmail.com'
-EMAIL_HOST_PASSWORD = 'zcfnpyhmsyqfimyw'
+EMAIL_HOST_USER = config('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = config('EMAIL_HOST_PASSWORD')
 
 # =============Settings for Allauth========================
 
