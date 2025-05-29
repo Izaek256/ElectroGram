@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+/media
+/staticfiles
+
+# Environment
+.env
+*.env
+
+# Virtual Environments
+venv/
+env/
+core/
+
+# PostgreSQL-specific (optional if you use backup files)
+*.pgdata
+*.pgsql
+*.sql
+
+# VS Code settings
+.vscode/
+
+# Mac or Windows OS files
+.DS_Store
+Thumbs.db
