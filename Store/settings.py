@@ -179,13 +179,6 @@ EMAIL_USE_TLS = True
 EMAIL_HOST_USER = 'isaackisuule240@gmail.com'
 EMAIL_HOST_PASSWORD = 'zcfnpyhmsyqfimyw'
 
-# =================Twilio====================
-# settings.py or .env (if using django-environ)
-TWILIO_ACCOUNT_SID = 'AC1a5a888179d9ee85f66d30780022a4fb'
-TWILIO_AUTH_TOKEN = 'db44bb58bf6f851fc525a4b9563149ff'
-TWILIO_WHATSAPP_NUMBER = 'whatsapp:+14155238886'  # Twilio Sandbox number
-ADMIN_WHATSAPP_NUMBER = 'whatsapp:+256726995460'  # Admin's WhatsApp number
-
 # =============Settings for Allauth========================
 
 
