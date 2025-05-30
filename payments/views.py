@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
+import json
 from .models import DeliveryAddress
 from .models import Order
 
@@ -288,7 +289,7 @@ def process_order(request):
                     'order_id': order.id,
                     'dashboard_url': request.build_absolute_uri('/dashboard/')
                 }
-                # If you want to use a QR code in the email, generate it as base64
+                # Generate QR code as base64 for email attachment
                 try:
                     import qrcode
                     import base64
@@ -299,17 +300,19 @@ def process_order(request):
                         box_size=10,
                         border=4,
                     )
-                    qr.add_data(qr_data)
+                    qr.add_data(json.dumps(qr_data))
                     qr.make(fit=True)
                     img = qr.make_image(fill='black', back_color='white')
                     buffer = BytesIO()
                     img.save(buffer, format="PNG")
                     base64_img = base64.b64encode(buffer.getvalue()).decode('utf-8')
                     qr_code_url = f"data:image/png;base64,{base64_img}"
-                except Exception:
+                except Exception as e:
+                    logger.error(f"Error generating QR code: {str(e)}", exc_info=True)
                     qr_code_url = ''
 
-                context = {
+                # Context for customer email
+                customer_context = {
                     'order': order,
                     'order_items': order_items,
                     'invoice_date': invoice_date,
@@ -317,15 +320,45 @@ def process_order(request):
                     'phone_number': phone_number,
                     'qr_code_url': qr_code_url,
                 }
-                html_content = render_to_string('payments/order_email.html', context)
-                subject = f"Order Confirmation - Invoice #{order.invoice_number}"
+                
+                # Send email to customer
+                customer_html_content = render_to_string('payments/order_email.html', customer_context)
+                customer_subject = f"Order Confirmation - Invoice #{order.invoice_number}"
                 from_email = settings.DEFAULT_FROM_EMAIL
                 to_email = [order.email]
-                email = EmailMultiAlternatives(subject, strip_tags(html_content), from_email, to_email)
-                email.attach_alternative(html_content, "text/html")
-                # Attach the HTML as a .pdf (but it's HTML content)
-                email.attach(f"Order_INV-{order.invoice_number}.pdf", html_content, 'application/pdf')
-                email.send()
+                customer_email = EmailMultiAlternatives(customer_subject, strip_tags(customer_html_content), from_email, to_email)
+                customer_email.attach_alternative(customer_html_content, "text/html")
+                
+                # If QR code was successfully generated, attach it as a separate file
+                if qr_code_url:
+                    try:
+                        # Extract base64 data and convert back to binary
+                        qr_binary = base64.b64decode(base64_img)
+                        customer_email.attach(f"Your Order QR Code.png", qr_binary, 'image/png')
+                    except Exception as e:
+                        logger.error(f"Error attaching QR code: {str(e)}", exc_info=True)
+                
+                customer_email.send()
+                
+                # Send notification to admin
+                admin_context = {
+                    'order': order,
+                    'order_items': order_items,
+                    'user': user,
+                    'delivery_address': delivery_address,
+                    'phone_number': phone_number,
+                    'invoice_date': invoice_date,
+                    'due_date': due_date,
+                    'qr_code_url': qr_code_url,
+                }
+                
+                admin_html_content = render_to_string('payments/admin_order_notification.html', admin_context)
+                admin_subject = f"New Order Notification - Invoice #{order.invoice_number}"
+                admin_email = settings.EMAIL_HOST_USER  # Send to the admin email configured in settings
+                
+                admin_notification = EmailMultiAlternatives(admin_subject, strip_tags(admin_html_content), from_email, [admin_email])
+                admin_notification.attach_alternative(admin_html_content, "text/html")
+                admin_notification.send()
 
                 messages.success(request, "Order placed successfully! A detailed invoice has been sent to your email.")
                 return redirect('payments:order-success')

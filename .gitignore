@@ -32,3 +32,4 @@ core/
 # Mac or Windows OS files
 .DS_Store
 Thumbs.db
+.env
