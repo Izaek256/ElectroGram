@@ -342,32 +342,79 @@
                     cancelButton.disabled = false;
                 }
                 
-                // Use Bootstrap 5 way of showing modal for better mobile compatibility
+                // Get the modal element
+                const modalElement = document.getElementById('orderModal');
+                if (!modalElement) {
+                    console.error('Modal element not found');
+                    return;
+                }
+
+                // Create a new modal instance (Bootstrap 5)
+                const orderModal = new bootstrap.Modal(modalElement, {
+                    backdrop: true,
+                    keyboard: true,
+                    focus: true
+                });
+                
+                // Store the modal instance for later use
+                modalElement._orderModal = orderModal;
+                
+                // Show the modal
                 try {
-                    const modalElement = document.getElementById('orderModal');
+                    orderModal.show();
+                    console.log('Modal shown');
                     
-                    // Force any existing modal to be hidden first
-                    const existingModal = bootstrap.Modal.getInstance(modalElement);
-                    if (existingModal) {
-                        existingModal.dispose();
-                    }
-                    
-                    // Create a new modal instance with explicit options
-                    const orderModal = new bootstrap.Modal(modalElement, {
-                        backdrop: true,
-                        keyboard: true,
-                        focus: true
+                    // Add event listeners for close buttons
+                    const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+                    closeButtons.forEach(button => {
+                        button.addEventListener('click', () => {
+                            orderModal.hide();
+                        });
                     });
                     
-                    // Show the modal with a slight delay to ensure DOM is ready
-                    setTimeout(() => {
-                        orderModal.show();
-                        console.log('Modal shown');
-                    }, 100);
+                    // Handle backdrop click
+                    modalElement.addEventListener('click', function(event) {
+                        if (event.target === modalElement) {
+                            orderModal.hide();
+                        }
+                    });
+                    
                 } catch (error) {
                     console.error('Error showing modal:', error);
-                    // Fallback method if the Bootstrap modal fails
-                    $('#orderModal').modal('show');
+                    // Fallback to jQuery if available
+                    if (typeof $ !== 'undefined') {
+                        $('#orderModal').modal('show');
+                    } else {
+                        // Last resort: show the modal by manipulating styles
+                        modalElement.style.display = 'block';
+                        modalElement.classList.add('show');
+                        document.body.classList.add('modal-open');
+                        const backdrop = document.createElement('div');
+                        backdrop.className = 'modal-backdrop fade show';
+                        backdrop.id = 'modalBackdrop';
+                        document.body.appendChild(backdrop);
+                        
+                        // Add click handler for backdrop
+                        backdrop.addEventListener('click', () => {
+                            modalElement.style.display = 'none';
+                            modalElement.classList.remove('show');
+                            document.body.classList.remove('modal-open');
+                            backdrop.remove();
+                        });
+                        
+                        // Add click handlers for close buttons
+                        const closeButtons = modalElement.querySelectorAll('[data-bs-dismiss="modal"]');
+                        closeButtons.forEach(button => {
+                            button.addEventListener('click', () => {
+                                modalElement.style.display = 'none';
+                                modalElement.classList.remove('show');
+                                document.body.classList.remove('modal-open');
+                                if (backdrop && backdrop.parentNode) {
+                                    backdrop.remove();
+                                }
+                            });
+                        });
+                    }
                 }
             })
             .catch(error => console.error('Error fetching order details:', error));
