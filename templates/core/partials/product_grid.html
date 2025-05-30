@@ -1,0 +1,94 @@
+{% load static %}
+{% load humanize %}
+
+<div class="shop-p__collection">
+    <div class="row is-grid-active">
+        {% for product in products %}
+        <div class="col-lg-3 col-md-6 col-sm-12">
+            <div class="product-m">
+                <div class="product-m__thumb">
+                    <a class="aspect aspect--bg-grey aspect--square u-d-block"
+                        href="{% url 'base:product-detail' slug=product.slug %}">
+                        <img class="aspect__img" src="{{ product.get_image_url }}"
+                            alt="{{ product.title }}"></a>
+                    <div class="product-m__add-cart">
+                        <a class="btn btn--e-brand-b-2" id="addCart" type="button"
+                            value="{{ product.id }}" data-product-id="{{ product.id }}"
+                            id="addToCart">Add to Cart</a>
+                    </div>
+                </div>
+                <div class="product-m__content">
+                    <div class="product-m__category">
+                        <a href="{% url 'base:product_category_list' product.category.cid %}">
+                            {{product.category.title }}</a>
+                    </div>
+                    <div class="product-m__name">
+                        <a href="{% url 'base:product-detail' product.slug %}">{{ product.title}}
+                            </a>
+                    </div>
+                    <br>
+                    <div class="product-m__price">Ugx. {{ product.price|intcomma}} /=</div>
+                    <div class="pd-detail__inline">
+                        <span class="pd-detail__stock">{{ product.stock }} in stock</span>
+                        {% if product.stock <= 5 %}
+                        <span class="pd-detail__left">Only {{ product.stock }} left</span>
+                        {% endif %}
+                        {% if product.tags.all %}
+                        {% for tag in product.tags.all %}
+                        <span class="pd-detail__tag" data-tag="{{ tag.name }}">{{ tag.name }}</span>
+                        {% endfor %}
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<div class="u-s-p-y-60">
+    <!--====== Pagination ======-->
+    <nav class="pagination-container" aria-label="Page navigation">
+        <ul class="pagination">
+            {% if products.has_other_pages %}
+            {% if products.has_previous %}
+            <li class="page-item">
+                <a class="page-link first" hx-get="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page=1" hx-target="#product-grid" hx-push-url="true" aria-label="First">
+                    <span aria-hidden="true">«</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link prev" hx-get="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ products.previous_page_number }}" hx-target="#product-grid" hx-push-url="true" aria-label="Previous">
+                    <span aria-hidden="true">‹</span>
+                </a>
+            </li>
+            {% endif %}
+
+            {% for num in products.paginator.page_range %}
+            {% if num == products.number %}
+            <li class="page-item active">
+                <span class="page-link">{{ num }}</span>
+            </li>
+            {% elif num > products.number|add:-3 and num < products.number|add:3 %}
+            <li class="page-item">
+                <a class="page-link" hx-get="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ num }}" hx-target="#product-grid" hx-push-url="true">{{ num }}</a>
+            </li>
+            {% endif %}
+            {% endfor %}
+
+            {% if products.has_next %}
+            <li class="page-item">
+                <a class="page-link next" hx-get="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ products.next_page_number }}" hx-target="#product-grid" hx-push-url="true" aria-label="Next">
+                    <span aria-hidden="true">›</span>
+                </a>
+            </li>
+            <li class="page-item">
+                <a class="page-link last" hx-get="?{% for k,v in request.GET.items %}{% if k != 'page' %}{{k}}={{v}}&{% endif %}{% endfor %}page={{ products.paginator.num_pages }}" hx-target="#product-grid" hx-push-url="true" aria-label="Last">
+                    <span aria-hidden="true">»</span>
+                </a>
+            </li>
+            {% endif %}
+            {% endif %}
+        </ul>
+    </nav>
+    <!--====== End - Pagination ======-->
+</div>

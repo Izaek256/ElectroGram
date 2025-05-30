@@ -1,3 +1,8 @@
+/* Hide primary slider navigation controls */
+#hero-slider .owl-nav {
+    display: none !important;
+}
+
 .input-wide {
     width: 100%; /* Adjust the width as needed */
     max-width: 500px; /* Optional: Set a maximum width */

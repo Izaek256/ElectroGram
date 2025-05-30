@@ -19,7 +19,6 @@ db.sqlite3
 # Virtual Environments
 venv/
 env/
-core/
 
 # PostgreSQL-specific (optional if you use backup files)
 *.pgdata
