@@ -1,31 +1,32 @@
 from pathlib import Path
 import os
 from dotenv import load_dotenv
-from django.conf import settings
 from urllib.parse import urlparse
+from django.conf import settings
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+# Load environment variables from .env file
+load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-# Initialise environment variables
-env = load_dotenv.Env(
-    DEBUG=(bool, False)
-)
-
-load_dotenv.Env.read_env(os.path.join(BASE_DIR, '.env'))
+# Parse DATABASE_URL if it exists
+database_url = os.getenv("DATABASE_URL")
+if database_url:
+    tmpPostgres = urlparse(database_url)
+else:
+    tmpPostgres = None
 
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = env('SECRET_KEY')
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = env('DEBUG')
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 
-ALLOWED_HOSTS = env.list('DJANGO_ALLOWED_HOSTS', default=['127.0.0.1', 'localhost'])
+ALLOWED_HOSTS = os.getenv('DJANGO_ALLOWED_HOSTS', '127.0.0.1').split(',')
 
 
 # Application definition
@@ -63,8 +64,8 @@ SOCIALACCOUNT_PROVIDERS = {}
 
 SOCIALACCOUNT_PROVIDERS['google'] = {
     'APP': {
-        'client_id': env('GOOGLE_CLIENT_ID'),
-        'secret': env('GOOGLE_CLIENT_SECRET'),
+        'client_id': os.getenv('GOOGLE_CLIENT_ID'),
+        'secret': os.getenv('GOOGLE_CLIENT_SECRET'),
     }
 }
 
@@ -106,17 +107,61 @@ WSGI_APPLICATION = 'Store.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': tmpPostgres.path.replace('/', ''),
-        'USER': tmpPostgres.username,
-        'PASSWORD': tmpPostgres.password,
-        'HOST': tmpPostgres.hostname,
-        'PORT': 5432,
+# Use DATABASE_URL if available, otherwise use individual environment variables
+if database_url and tmpPostgres:
+    # Parse query parameters for SSL mode
+    import urllib.parse as urlparse_module
+    query_params = urlparse_module.parse_qs(tmpPostgres.query)
+    ssl_mode = query_params.get('sslmode', ['prefer'])[0]
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgres.path[1:],  # Remove leading slash
+            'USER': tmpPostgres.username,
+            'PASSWORD': tmpPostgres.password,
+            'HOST': tmpPostgres.hostname,
+            'PORT': tmpPostgres.port or '5432',
+            'OPTIONS': {
+                'sslmode': ssl_mode,
+                'connect_timeout': 10,
+            }
+        }
+        
+        
+        
     }
-}
+else:
+    # Fallback to individual environment variables
+    db_host = os.getenv('DB_HOST', 'localhost')
+    is_local = db_host in ['localhost', '127.0.0.1', '::1']
+    ssl_mode = os.getenv('DB_SSLMODE', 'disable' if is_local else 'require')
+    
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': os.getenv('DB_NAME'),
+            'USER': os.getenv('DB_USER'),
+            'PASSWORD': os.getenv('DB_PASSWORD'),
+            'HOST': db_host,
+            'PORT': os.getenv('DB_PORT', '5432'),
+            'OPTIONS': {
+                'sslmode': ssl_mode,
+                'connect_timeout': 10,
+            }
+        }
+    }
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.postgresql',
+#         'NAME': 'electrogramplc_db',
+#         'USER': 'postgres',
+#         'PASSWORD': 'eugenek890@E256',
+#         'HOST': 'localhost',
+#         'PORT': '5432',
+#     }
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/5.1/ref/settings/#auth-password-validators
@@ -186,11 +231,10 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # Example for Gmail
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = env('EMAIL_HOST_USER')
-EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD')
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 
 # =============Settings for Allauth========================
-
 
 LOGIN_REDIRECT_URL = '/'
 ACCOUNT_LOGOUT_REDIRECT_URL = '/'
@@ -201,6 +245,3 @@ ACCOUNT_USER_MODEL_USERNAME_FIELD = 'username'
 
 SOCIALACCOUNT_AUTO_SIGNUP = True
 SOCIALACCOUNT_ADAPTER = 'Store.adapters.YourSocialAccountAdapter'
-
-
-
